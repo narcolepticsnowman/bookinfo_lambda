@@ -15,10 +15,10 @@
 FROM python:3.7.7-slim
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 COPY test-requirements.txt ./
-RUN pip install --no-cache-dir -r test-requirements.txt
+RUN pip install -r test-requirements.txt
 
 COPY productpage.py /opt/microservices/
 COPY tests/unit/* /opt/microservices/
@@ -32,5 +32,14 @@ ENV FLOOD_FACTOR ${flood_factor:-0}
 EXPOSE 9080
 WORKDIR /opt/microservices
 RUN python -m unittest discover
-
+#for aws lambda
+RUN pip install -r requirements.txt --target ./package
+RUN pip cache purge
+RUN apt-get update && apt-get install -y zip
+WORKDIR /opt/microservices/package
+RUN zip -r ../productpage.zip ./
+WORKDIR /opt/microservices
+RUN rm -rf ./package && \
+    zip -r productpage.zip ./ && \
+    unzip -l productpage.zip | grep -v package/
 CMD ["python", "productpage.py", "9080"]

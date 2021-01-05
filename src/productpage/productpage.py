@@ -17,8 +17,9 @@
 
 from __future__ import print_function
 from flask_bootstrap import Bootstrap
-from flask import Flask, request, session, render_template, redirect, url_for
+from flask import request, session, render_template, redirect
 from flask import _request_ctx_stack as stack
+from flask_lambda import FlaskLambda
 from jaeger_client import Tracer, ConstSampler
 from jaeger_client.reporter import NullReporter
 from jaeger_client.codecs import B3Codec
@@ -26,8 +27,6 @@ from opentracing.ext import tags
 from opentracing.propagation import Format
 from opentracing_instrumentation.request_context import get_current_span, span_in_context
 import simplejson as json
-import requests
-import sys
 from json2html import *
 import logging
 import requests
@@ -44,7 +43,7 @@ except ImportError:
     import httplib as http_client
 http_client.HTTPConnection.debuglevel = 1
 
-app = Flask(__name__)
+app = FlaskLambda(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
