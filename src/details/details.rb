@@ -14,120 +14,111 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-require 'webrick'
 require 'json'
 require 'net/http'
 
-if ARGV.length < 1 then
-    puts "usage: #{$PROGRAM_NAME} port"
-    exit(-1)
-end
-
-port = Integer(ARGV[0])
-
-server = WEBrick::HTTPServer.new :BindAddress => '*', :Port => port
-
-trap 'INT' do server.shutdown end
-
-server.mount_proc '/health' do |req, res|
-    res.status = 200
-    res.body = {'status' => 'Details is healthy'}.to_json
-    res['Content-Type'] = 'application/json'
-end
-
-server.mount_proc '/details' do |req, res|
-    pathParts = req.path.split('/')
-    headers = get_forward_headers(req)
-
+def lambda_handler(event:, context:)
+  path_parts = event['path'].split('/')
+  headers = get_forward_headers(event['headers'] || {})
+  begin
     begin
-        begin
-          id = Integer(pathParts[-1])
-        rescue
-          raise 'please provide numeric product id'
-        end
-        details = get_book_details(id, headers)
-        res.body = details.to_json
-        res['Content-Type'] = 'application/json'
-    rescue => error
-        res.body = {'error' => error}.to_json
-        res['Content-Type'] = 'application/json'
-        res.status = 400
+      id = Integer(path_parts[-1])
+    rescue
+      raise 'please provide numeric product id'
     end
+    {
+        statusCode: 200,
+        body: JSON.generate(
+            get_book_details(id, headers)
+        ),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+  rescue => error
+    {
+        statusCode: 400,
+        body: JSON.generate({error: error}),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+  end
 end
 
 # TODO: provide details on different books.
 def get_book_details(id, headers)
-    if ENV['ENABLE_EXTERNAL_BOOK_SERVICE'] === 'true' then
-      # the ISBN of one of Comedy of Errors on the Amazon
-      # that has Shakespeare as the single author
-        isbn = '0486424618'
-        return fetch_details_from_external_service(isbn, id, headers)
-    end
+  if ENV['ENABLE_EXTERNAL_BOOK_SERVICE'] === 'true'
+    # the ISBN of one of Comedy of Errors on the Amazon
+    # that has Shakespeare as the single author
+    isbn = '0486424618'
+    return fetch_details_from_external_service(isbn, id, headers)
+  end
 
-    return {
-        'id' => id,
-        'author': 'William Shakespeare',
-        'year': 1595,
-        'type' => 'paperback',
-        'pages' => 200,
-        'publisher' => 'PublisherA',
-        'language' => 'English',
-        'ISBN-10' => '1234567890',
-        'ISBN-13' => '123-1234567890'
-    }
+  {
+      'id' => id,
+      'author': 'William Shakespeare',
+      'year': 1595,
+      'type' => 'paperback',
+      'pages' => 200,
+      'publisher' => 'PublisherA',
+      'language' => 'English',
+      'ISBN-10' => '1234567890',
+      'ISBN-13' => '123-1234567890'
+  }
 end
 
 def fetch_details_from_external_service(isbn, id, headers)
-    uri = URI.parse('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn)
-    http = Net::HTTP.new(uri.host, ENV['DO_NOT_ENCRYPT'] === 'true' ? 80:443)
-    http.read_timeout = 5 # seconds
+  uri = URI.parse('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn)
+  http = Net::HTTP.new(uri.host, ENV['DO_NOT_ENCRYPT'] === 'true' ? 80 : 443)
+  http.read_timeout = 5 # seconds
 
-    # DO_NOT_ENCRYPT is used to configure the details service to use either
-    # HTTP (true) or HTTPS (false, default) when calling the external service to
-    # retrieve the book information.
-    #
-    # Unless this environment variable is set to true, the app will use TLS (HTTPS)
-    # to access external services.
-    unless ENV['DO_NOT_ENCRYPT'] === 'true' then
-      http.use_ssl = true
-    end
+  # DO_NOT_ENCRYPT is used to configure the details service to use either
+  # HTTP (true) or HTTPS (false, default) when calling the external service to
+  # retrieve the book information.
+  #
+  # Unless this environment variable is set to true, the app will use TLS (HTTPS)
+  # to access external services.
+  unless ENV['DO_NOT_ENCRYPT'] === 'true'
+    http.use_ssl = true
+  end
 
-    request = Net::HTTP::Get.new(uri.request_uri)
-    headers.each { |header, value| request[header] = value }
+  request = Net::HTTP::Get.new(uri.request_uri)
+  headers.each { |header, value| request[header] = value }
 
-    response = http.request(request)
+  response = http.request(request)
 
-    json = JSON.parse(response.body)
-    book = json['items'][0]['volumeInfo']
+  json = JSON.parse(response.body)
+  book = json['items'][0]['volumeInfo']
 
-    language = book['language'] === 'en'? 'English' : 'unknown'
-    type = book['printType'] === 'BOOK'? 'paperback' : 'unknown'
-    isbn10 = get_isbn(book, 'ISBN_10')
-    isbn13 = get_isbn(book, 'ISBN_13')
+  language = book['language'] === 'en' ? 'English' : 'unknown'
+  type = book['printType'] === 'BOOK' ? 'paperback' : 'unknown'
+  isbn10 = get_isbn(book, 'ISBN_10')
+  isbn13 = get_isbn(book, 'ISBN_13')
 
-    return {
-        'id' => id,
-        'author': book['authors'][0],
-        'year': book['publishedDate'],
-        'type' => type,
-        'pages' => book['pageCount'],
-        'publisher' => book['publisher'],
-        'language' => language,
-        'ISBN-10' => isbn10,
-        'ISBN-13' => isbn13
+  {
+      'id' => id,
+      'author': book['authors'][0],
+      'year': book['publishedDate'],
+      'type' => type,
+      'pages' => book['pageCount'],
+      'publisher' => book['publisher'],
+      'language' => language,
+      'ISBN-10' => isbn10,
+      'ISBN-13' => isbn13
   }
 
 end
 
 def get_isbn(book, isbn_type)
-  isbn_dentifiers = book['industryIdentifiers'].select do |identifier|
+  isbn_identifiers = book['industryIdentifiers'].select do |identifier|
     identifier['type'] === isbn_type
   end
 
-  return isbn_dentifiers[0]['identifier']
+  isbn_identifiers[0]['identifier']
 end
 
-def get_forward_headers(request)
+def get_forward_headers(request_headers)
   headers = {}
 
   # Keep this in sync with the headers in productpage and reviews.
@@ -177,13 +168,11 @@ def get_forward_headers(request)
       'user-agent',
   ]
 
-  request.each do |header, value|
-    if incoming_headers.include? header then
+  request_headers.each do |header, value|
+    if incoming_headers.include? header
       headers[header] = value
     end
   end
 
-  return headers
+  headers
 end
-
-server.start
