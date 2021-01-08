@@ -7,17 +7,17 @@
 
 {% block styles %}
 <!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ pathPrefix }}static/bootstrap/css/bootstrap.min.css">
 
 <!-- Optional theme -->
-<link rel="stylesheet" href="static/bootstrap/css/bootstrap-theme.min.css">
+<link rel="stylesheet" href="{{ pathPrefix }}static/bootstrap/css/bootstrap-theme.min.css">
 {% endblock %}
 {% block scripts %}
 <!-- Latest compiled and minified JavaScript -->
-<script src="static/jquery.min.js"></script>
+<script src="{{ pathPrefix }}static/jquery.min.js"></script>
 
 <!-- Latest compiled and minified JavaScript -->
-<script src="static/bootstrap/js/bootstrap.min.js"></script>
+<script src="{{ pathPrefix }}static/bootstrap/js/bootstrap.min.js"></script>
 
 <script type="text/javascript">
   $('#login-modal').on('shown.bs.modal', function () {
@@ -36,7 +36,7 @@
     {% if user: %}
     <p class="navbar-text navbar-right">
       <i class="glyphicon glyphicon-user" aria-hidden="true"></i>
-      <span style="padding-left: 5px;">{{ user }} ( <a href="logout">sign out</a> )</span>
+      <span style="padding-left: 5px;">{{ user }} ( <a href="{{ pathPrefix }}logout">sign out</a> )</span>
     </p>
     {% else %}
     <button type="button" class="btn btn-default navbar-btn navbar-right" data-toggle="modal" href="#login-modal">Sign

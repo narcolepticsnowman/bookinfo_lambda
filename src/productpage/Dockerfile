@@ -37,7 +37,10 @@ RUN pip install -r requirements.txt --target ./package
 RUN pip cache purge
 RUN apt-get update && apt-get install -y zip
 WORKDIR /opt/microservices/package
-RUN zip -r ../productpage.zip ./
+RUN apt-get install -y curl &&\
+    rm -f flask_lambda.py &&\
+    curl https://raw.githubusercontent.com/narcolepticsnowman/flask-lambda/master/flask_lambda.py -O &&\
+    zip -r ../productpage.zip ./
 WORKDIR /opt/microservices
 RUN rm -rf ./package && \
     zip -r productpage.zip ./ && \

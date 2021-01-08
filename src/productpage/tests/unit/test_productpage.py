@@ -22,6 +22,8 @@ import unittest
 
 import requests_mock
 
+import simplejson as json
+
 import productpage
 
 
@@ -54,6 +56,7 @@ class ApplianceTest(unittest.TestCase):
             'x-b3-sampled': '1'
         }
         actual = self.app.get(uri, headers=headers)
+        print(json.dumps(actual.get_data()))
         self.assertEqual(200, actual.status_code)
 
     @requests_mock.Mocker()
@@ -80,4 +83,5 @@ class ApplianceTest(unittest.TestCase):
             'x-b3-sampled': '1'
         }
         actual = self.app.get(uri, headers=headers)
+        print(json.dumps(actual.get_data()))
         self.assertEqual(200, actual.status_code)

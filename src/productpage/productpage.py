@@ -44,6 +44,20 @@ except ImportError:
 http_client.HTTPConnection.debuglevel = 1
 
 app = FlaskLambda(__name__)
+pathPrefix = os.environ.get("PATH_PREFIX") if os.environ.get("PATH_PREFIX") else ''
+
+if pathPrefix and pathPrefix != '/':
+    if not pathPrefix.endswith('/'):
+        pathPrefix = pathPrefix + '/'
+    if not pathPrefix.startswith('/'):
+        pathPrefix = '/' + pathPrefix
+
+
+@app.context_processor
+def inject_path_prefix():
+    return dict(pathPrefix=pathPrefix)
+
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
@@ -60,29 +74,28 @@ servicesDomain = "" if (os.environ.get("SERVICES_DOMAIN") is None) else "." + os
 detailsHostname = "details" if (os.environ.get("DETAILS_HOSTNAME") is None) else os.environ.get("DETAILS_HOSTNAME")
 ratingsHostname = "ratings" if (os.environ.get("RATINGS_HOSTNAME") is None) else os.environ.get("RATINGS_HOSTNAME")
 reviewsHostname = "reviews" if (os.environ.get("REVIEWS_HOSTNAME") is None) else os.environ.get("REVIEWS_HOSTNAME")
-
 flood_factor = 0 if (os.environ.get("FLOOD_FACTOR") is None) else int(os.environ.get("FLOOD_FACTOR"))
 
 details = {
-    "name": "http://{0}{1}:9080".format(detailsHostname, servicesDomain),
+    "name": "http://{0}{1}:9080{2}".format(detailsHostname, servicesDomain, pathPrefix),
     "endpoint": "details",
     "children": []
 }
 
 ratings = {
-    "name": "http://{0}{1}:9080".format(ratingsHostname, servicesDomain),
+    "name": "http://{0}{1}:9080{2}".format(ratingsHostname, servicesDomain, pathPrefix),
     "endpoint": "ratings",
     "children": []
 }
 
 reviews = {
-    "name": "http://{0}{1}:9080".format(reviewsHostname, servicesDomain),
+    "name": "http://{0}{1}:9080{2}".format(reviewsHostname, servicesDomain, pathPrefix),
     "endpoint": "reviews",
     "children": [ratings]
 }
 
 productpage = {
-    "name": "http://{0}{1}:9080".format(detailsHostname, servicesDomain),
+    "name": "http://{0}{1}:9080{2}".format(detailsHostname, servicesDomain, pathPrefix),
     "endpoint": "details",
     "children": [details, reviews]
 }
@@ -114,7 +127,7 @@ service_dict = {
 # intended as a reference to help people get started, eg how to create spans,
 # extract/inject context, etc.
 
-# A very basic OpenTracing tracer (with null reporter)
+# A very basic OpenTracing tracer (with None reporter)
 tracer = Tracer(
     one_span_per_rpc=True,
     service_name='productpage',

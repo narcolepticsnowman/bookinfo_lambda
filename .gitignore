@@ -52,3 +52,4 @@ out/
 etc/
 var/
 .idea/
+venv
