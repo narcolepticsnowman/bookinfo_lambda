@@ -16,6 +16,7 @@ dependencies {
 task buildZip(type: Zip) {
     from compileJava
     from processResources
+    archiveName 'reviews.zip'
     into('lib') {
         from configurations.runtimeClasspath
     }

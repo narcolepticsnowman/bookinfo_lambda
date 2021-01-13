@@ -2,4 +2,6 @@
 if [ -f productpage.zip ]; then
   rm -f productpage.zip
 fi
-docker run --rm -ip 9080:9080 $(docker build -q .) bash -c "cat productpage.zip | base64" |base64 -d >productpage.zip
+docker run --rm "$(docker build -q .)" cat productpage.zip > productpage.zip
+echo "Created zip file"
+ls -l productpage.zip

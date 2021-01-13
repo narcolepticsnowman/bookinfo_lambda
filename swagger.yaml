@@ -1,9 +1,8 @@
 swagger: "2.0"
 info:
-  description: "This is the API of the Istio BookInfo sample application."
+  description: "This is the API of the BookInfo sample application."
   version: "1.0.0"
   title: "BookInfo API"
-  termsOfService: "https://istio.io/"
   license:
     name: "Apache 2.0"
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
@@ -241,7 +240,7 @@ definitions:
       ratings:
         type: "object"
         description: "A hashmap where keys are reviewer names, values are number of stars"
-        additionalProperties: 
+        additionalProperties:
           type: "string"
     required:
     - "id"
