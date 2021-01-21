@@ -2,6 +2,8 @@
 if [ -f details.zip ]; then
   rm -f details.zip
 fi
-docker run --rm "$(docker build -q "$@" .)" cat details.zip > details.zip
+imageId=$(docker build "$@" .|tee /dev/tty|grep "^Successfully built"|awk '{print $NF}')
+
+docker run --rm "$imageId" cat details.zip > details.zip
 echo "Created zip file"
 ls -l details.zip

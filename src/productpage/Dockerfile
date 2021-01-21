@@ -6,7 +6,10 @@ RUN pip install -r requirements.txt
 COPY test-requirements.txt /opt/productpage/
 RUN pip install -r test-requirements.txt
 
-COPY productpage.py tests/unit/* templates static /opt/productpage/
+COPY productpage.py /opt/productpage/
+COPY templates /opt/productpage/templates/
+COPY static /opt/productpage/static/
+COPY tests/unit/* /opt/productpage/tests/unit/
 
 RUN python -m unittest discover
 
@@ -21,5 +24,4 @@ RUN apt-get install -y curl &&\
     zip -r ../productpage.zip ./
 WORKDIR /opt/productpage
 RUN rm -rf ./package && \
-    zip -r productpage.zip ./ && \
-    unzip -l productpage.zip | grep -v package/
+    zip -r productpage.zip ./
